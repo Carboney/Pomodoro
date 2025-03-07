@@ -2,6 +2,7 @@
 	import TimerIcon from '$lib/components/timerIcon.svelte';
 	import Tooltip from '$lib/components/tooltip.svelte';
 	import { onMount } from 'svelte';
+	import { preventDefault } from 'svelte/legacy';
 
 	const pomodoroTime = 1500;
 	const shortBreakTime = 300;
@@ -29,6 +30,7 @@
 
 	function Countdown() {
 		isPause = !isPause;
+		new Audio(clickSound.src).play();
 
 		if (!isPause) {
 			endDate = new Date();
@@ -39,9 +41,20 @@
 	}
 
 	let bell: HTMLAudioElement;
+	let clickSound: HTMLAudioElement;
 
 	onMount(() => {
 		bell = new Audio('src/lib/bell.wav');
+
+		window.addEventListener('keydown', (event) => {
+			if (event.key === ' ') Countdown();
+		});
+
+		window.addEventListener('keydown', (event) => {
+			if (event.key === 'r') resetClock();
+		});
+
+		clickSound = new Audio('src/lib/components/click.mp3');
 	});
 
 	function RingBell() {
@@ -62,7 +75,9 @@
 	}, 1000);
 
 	function resetClock() {
+		isPause = true;
 		timer = time;
+		new Audio(clickSound.src).play();
 	}
 </script>
 
@@ -123,9 +138,11 @@
 					<Tooltip actionName="Reset" key="R">
 						<button
 							class="btn btn-secondary btn-circle p-8"
-							onclick={() => {
-								timer = time;
-								isPause = true;
+							onkeydown={(event) => {
+								event.preventDefault();
+							}}
+							onmousedown={() => {
+								resetClock();
 							}}>Reset</button
 						>
 					</Tooltip>
@@ -138,7 +155,15 @@
 					</div>
 
 					<Tooltip actionName={isPause ? 'Start' : 'Pause'} key="space">
-						<button class="btn btn-circle btn-primary p-8" onclick={() => Countdown()}>{isPause ? 'Start' : 'Pause'}</button>
+						<button
+							class="btn btn-circle btn-primary p-8"
+							onkeydown={(event) => {
+								event.preventDefault();
+							}}
+							onclick={() => {
+								Countdown();
+							}}>{isPause ? 'Start' : 'Pause'}</button
+						>
 					</Tooltip>
 				</div>
 			</div>
@@ -148,7 +173,7 @@
 	<div class="relative mt-8 flex h-fit w-full place-content-center">
 		<div class="transition-300 absolute bottom-[22px] flex gap-1 transition-opacity ease-out {!isPause ? 'opacity-100' : 'opacity-0'}">
 			<span class="text-base-300/60 text-center">
-				{endHours > 12 ? endHours - 12 : endHours}:{endMinutes}
+				{endHours > 12 ? endHours - 12 : endHours}:{String(endMinutes).padStart(2, '0')}
 				{endHours < 12 ? 'AM' : 'PM'}
 			</span>
 
